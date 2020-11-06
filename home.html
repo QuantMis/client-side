@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <title>
+        Voucher Application
+    </title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+    <link href="https://fonts.googleapis.com/css?family=Poppins:200,300,400,600,700,800" rel="stylesheet" />
+    <link href="https://use.fontawesome.com/releases/v5.0.6/css/all.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"">
+    <script src=" https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
+    <script src="js/bootstrap.js"></script>
+
+    <style scoped>
+        .container {
+            margin-top: 20px;
+            width: 75%;
+        }
+
+        .card {
+            display: inline-block;
+            margin-right: 15px;
+        }
+
+        .btn-list {
+            float: right;
+            cursor: pointer;
+            color: gray;
+        }
+
+        .btn-list:hover {
+            color: skyblue;
+            transition: 0.1s;
+
+        }
+
+        .a-lst {
+            padding-left: 10px;
+            cursor: pointer;
+            color: gray;
+        }
+
+        .a-lst:hover {
+            color: skyblue;
+            transition: 0.1s;
+
+        }
+
+        .tbl {
+            font-size: 14px;
+        }
+
+        .invoice-total {
+            border-bottom: solid 0.1px;
+            border-color: gainsboro;
+        }
+
+        .btn {
+            font-size: 12px;
+            margin-left: 5px;
+            color: white;
+        }
+
+        .table {
+            border-bottom: solid 0.1px;
+            border-color: gainsboro;
+        }
+    </style>
+
+</head>
+
+<body class="">
+    <div id="app">
+        <div class="container">
+            <div class="container">
+                <nav class="navbar navbar-light" style="background-color: gray; color: white">
+                    Online Shop
+                </nav>
+            </div>
+            <div class="container">
+                <h5><b>Products</b></h5>
+                <p>List of available products</p>
+                <ul class="list-group" v-bind:key="product.id" v-for="product in products">
+                    <li class="list-group-item">{{product.title}} <p style="font-size: 15px;">
+                            <b>{{product.price}}</b>MYR</p><a v-on:click="postOrder(product)"><i
+                                class="fas fa-shopping-cart btn-list"></i></a></li>
+                </ul>
+            </div>
+
+            <div class="container">
+                <h5><b>My Orders</b><button style="float: right; font-size: 12px;" class="btn btn-secondary btn-sm"
+                        v-on:click="deleteAllOrder()">Reset Cart</button></h5>
+                <div class="empty-cart" v-if="orders.length == 0">
+                    <li class="list-group-item">No Order Yet!</li>
+                </div>
+                <div class="not-empty-cart" v-else>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th class="text-left tbl">Item</th>
+                                <th class="text-right tbl" style="width:15%">Unit Price (MYR)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-bind:key="order.id" v-for="order in orders">
+                                <td class="tbl">{{order.title}}<a class="a-lst" v-on:click="deleteOrder(order)"><i
+                                            class="fas fa-times"></i></a></td>
+                                <td class="text-right tbl">{{order.price}}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="col-xs-6 text-right pull-right invoice-total">
+                        <p>Subtotal : {{stotal}}</p>
+                        
+                        <p>Processing Fee : {{fee}} </p>
+                        <h5 v-if="vapplied!=null" style="float: left; color: lightskyblue"><b>{{vapplied}}</b></h5>
+                        <button class="btn btn-secondary btn-sm" style="float: left;"
+                            v-on:click="unstageVoucher()">remove voucher</button>
+                        <button class="btn btn-secondary btn-sm" style="float: left;"
+                            v-on:click="submitOrder()">confirm</button>
+                        <p>Total : {{gtotal}}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="container">
+                <p>Available Vouchers</p>
+                <div class="card" style="width: 18rem;" v-bind:key="voucher.id" v-for="voucher in vouchers">
+                    <div class="card-body">
+                        <h5 class="card-title">{{voucher.title}}</h5>
+                        <h5 class="card-text">{{voucher.capacity}} Usage</h5>
+                        <p class="card-text">{{voucher.description}}</p>
+                        <a style="color: white;" class="btn btn-primary" v-on:click="stageVoucher(voucher)">Apply Voucher</a>
+                    </div>
+                </div>
+            </div>
+            <div class="container">
+                <button class="btn btn-secondary btn-sm" v-on:click="isHidden = !isHidden">Show History</button>
+                <div v-if="!isHidden">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th class="text-left tbl">Items</th>
+                                <th class="text-right tbl" style="width:15%">Payout</th>
+                                <th class="text-right tbl" style="width:15%">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-bind:key="history.id" v-for="history in histories">
+                                <td class="tbl">{{history.orders}}</td>
+                                <td class="text-right tbl">{{history.payout}}</td>
+                                <td class="text-right tbl">{{history.date}}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+
+
+    </div>
+
+
+    <script>
+        var vm = new Vue({
+            el: "#app",
+            data: {
+                products: [],
+                vouchers: [],
+                orders: [],
+                histories: [],
+                gtotal: 0,
+                stotal: 0,
+                fee: 25,
+                isHidden: true,
+                applied: [],
+                vapplied: null,
+            }
+            ,
+            methods: {
+                // endpoint method
+                getProduct() {
+                    $.ajax({
+                        // https://voucher-production.herokuapp.com/api/voucher/
+                        url: "https://voucher-production.herokuapp.com/api/product/",
+                        cache: false,
+                        success: function (data) {
+                            for (var i = 0; i < data.length; i++) {
+                                Vue.set(vm.products, i, data[i])
+                            }
+                        }
+                    })
+                },
+                getVoucher() {
+                    $.ajax({
+                        url: "https://voucher-production.herokuapp.com/api/voucher/",
+                        cache: false,
+                        success: function (data) {
+                            for (var i = 0; i < data.length; i++) {
+                                Vue.set(vm.vouchers, i, data[i])
+                            }
+
+                        }
+                    })
+                },
+                getHistory() {
+                    $.ajax({
+                        url: "https://voucher-production.herokuapp.com/api/history/",
+                        cache: false,
+                        success: function (data) {
+                            for (var i = 0; i < data.length; i++) {
+                                Vue.set(vm.histories, i, data[i])
+                            }
+
+                        }
+                    })
+                },
+                getOrder() {
+                    var a = 0
+                    $.ajax({
+                        url: "https://voucher-production.herokuapp.com/api/order/",
+                        cache: false,
+                        success: function (data) {
+                            for (var i = 0; i < data.length; i++) {
+                                this.stotal = this.stotal + data[i].price
+                                a = a + data[i].price
+                                Vue.set(vm.orders, i, data[i])
+                            }
+                            vm.fee = 25;
+                            vm.stotal = a;
+                            vm.gtotal = a + vm.fee;
+                        }
+                    })
+                },
+                postOrder(product) {
+                    $.post("https://voucher-production.herokuapp.com/api/order/",
+                        {
+                            "title": product.title,
+                            "price": product.price
+                        },
+                        function (data, status) {
+                            alert("Added to cart")
+                            vm.getOrder()
+                        });
+                },
+
+                deleteOrder(order) {
+                    $.ajax({
+                        url: "https://voucher-production.herokuapp.com/api/order/" + order.id + "/",
+                        type: 'DELETE',
+                        success: function (data) {
+                            vm.orders = []
+                            vm.getOrder()
+                        }
+                    });
+                },
+
+                deleteAllOrder() {
+                    $.get(
+                        "https://voucher-production.herokuapp.com/api/order/delete_all/",
+                        function (data, status) {
+                            vm.orders = []
+                            vm.vapplied = null
+                        }
+                    );
+                },
+
+                stageVoucher(voucher) {
+                    let data = { "id": voucher.id }
+                    $.ajax({
+                        url: 'https://voucher-production.herokuapp.com/api/voucher/verify/',
+                        type: 'PUT',
+                        data: data,
+                        success: function (data) {
+                            if (data.status == "verify") {
+                                if (voucher.vouchtype == "OFF") {
+                                    alert("Voucher Applied")
+                                    var temp = vm.stotal
+                                    vm.stotal = vm.float2int(vm.stotal - (voucher.vouchvalue / 100) * temp)
+                                    vm.gtotal = vm.float2int(vm.gtotal - (voucher.vouchvalue / 100) * temp)
+                                    vm.vapplied = voucher.title
+                                }
+                                else if (voucher.vouchtype == "FEE") {
+                                    alert("Voucher Applied")
+                                    vm.gtotal = vm.gtotal - vm.fee
+                                    vm.fee = 0
+                                    vm.vapplied = voucher.title
+                                }
+                            }
+                            else {
+                                alert("Voucher not valid")
+                            }
+                        }
+                    });
+                },
+
+                unstageVoucher() {
+                    $.get(
+                        "https://voucher-production.herokuapp.com/api/voucher/unstage/",
+                        function (data, status) {
+                            vm.vapplied = null;
+                        }
+                    );
+                    this.getOrder()
+                },
+
+                submitOrder() {
+                    $.get(
+                        "https://voucher-production.herokuapp.com/api/order/submit/",
+                        function (data, status) {
+                            alert("Order Transacted")
+                            vm.getVoucher()
+                            vm.getHistory()
+                            vm.orders = []
+                            vm.vapplied = null;
+                        }
+                    );
+                },
+                // utils
+                float2int(value) {
+                    return value | 0;
+                }
+
+            },
+            created() {
+                this.getProduct();
+                this.getVoucher();
+                this.getOrder();
+                this.unstageVoucher();
+                this.getHistory();
+                this.vapplied = null;
+            },
+            updated() {
+            },
+
+        })
+
+
+
+
+
+
+    </script>
+</body>
+
+</html>
